@@ -1,7 +1,6 @@
 <?php
 
 require "Query.php";
-require "leech_data.php";
 
 class PullData
 {
@@ -10,6 +9,7 @@ class PullData
     private $tipe_soal;
     private $jenjang;
     private $matpel;
+
 
     /**
      * get last inputed tipe_soal_id
@@ -34,7 +34,6 @@ class PullData
     private function genSetValueForTipeSoal()
     {
         $setValue = "judul = '".$this->tipe_soal."', matpel_id='".$this->matpel."',jenjang='".$this->jenjang."'";
-
         return $setValue;
     }
 
@@ -44,14 +43,88 @@ class PullData
      * @param String $jenjang   jenjangnya apa (SD,SMP,SMA)
      * @param int $matpel    matpelnya apa (liat di db)
      */
-    public function __construct($tipe_soal,$jenjang,$matpel,$link)
+    public function __construct()
+    {
+        $this->query = new Query;
+    }
+
+    /**
+     * insert to DB
+     */
+    public function setToDB()
+    {
+        $cek = $this->query->insert("tipe_soal",$this->genSetValueForTipeSoal());
+        $tipe_soal_id = $this->getLastTipeSoalId();
+
+        $counter_pertanyaan = 1;
+        foreach($this->data as $key => $value)
+        {
+            $setValue = "no=".($key+1).",nama='".$value['pertanyaan']."',tipe_soal_id='".$tipe_soal_id."'";
+            $this->query->insert('pertanyaan',$setValue);
+            $pertanyaan_id = $this->getLastPertanyaanId();
+            $counter = 1;
+            for($i = 0 ; $i < count($value['jawaban']) ; $i++)
+            {
+                $tipe = 0;
+                if($i+1 == $value["kunci"]){
+                    $tipe = 1;
+                }
+                $setValue_pilihan = "nama_jawaban='".$value['jawaban'][$i]."',pertanyaan_id='".$pertanyaan_id."',tipe='".$tipe."'";
+                $this->query->insert('pilihan',$setValue_pilihan);
+                echo $counter." jawaban has been added\n";
+                $counter++;
+            }
+            echo $counter_pertanyaan." pertanyaan has been added\n";
+            $counter_pertanyaan++;
+        }
+    }
+
+    /**
+     * SETTER GETTER
+     */
+
+    /**
+     * set tipe soal
+     * @param string $tipe_soal
+     */
+    public function setTipeSoal($tipe_soal)
     {
         $this->tipe_soal = $tipe_soal;
-        $this->jenjang = $jenjang;
-        $this->matpel = $matpel;
+    }
 
-        $this->query = new Query;
-        $this->data = leechData($link);
+    /**
+     * set jenjang
+     * @param string $jenjang
+     */
+    public function setJenjang($jenjang)
+    {
+        $this->jenjang = $jenjang;
+    }
+
+    /**
+     * setmatpel
+     * @param int $matpel
+     */
+    public function setMatpel($matpel)
+    {
+        $this->matpel = $matpel;
+    }
+
+    /**
+     * check and return matpel
+     * @param  string $matpel
+     * @return int         matpel ID
+     */
+    public function checkMatpel($matpel)
+    {
+        $res = $this->query->find("matpel","id","nama",$matpel);
+        $matpel = '';
+        if(!$res){
+            $this->query->insert('matpel',"nama='".$matpel."'");
+            return $this->query->getLastId("matpel","id");
+        }
+
+        return $res;
     }
 
     /**
@@ -64,30 +137,12 @@ class PullData
     }
 
     /**
-     * insert to DB
+     * setData
+     * @param array $data
      */
-    public function setToDB()
+    public function setData($data)
     {
-        $cek = $this->query->insert("tipe_soal",$this->genSetValueForTipeSoal());
-        $tipe_soal_id = $this->getLastTipeSoalId();
-
-        foreach($this->data as $key => $value)
-        {
-            $setValue = "no=".($key+1).",nama='".$value['pertanyaan']."',tipe_soal_id='".$tipe_soal_id."'";
-            $this->query->insert('pertanyaan',$setValue);
-            $pertanyaan_id = $this->getLastPertanyaanId();
-
-            for($i = 0 ; $i < count($value['jawaban']) ; $i++)
-            {
-                $tipe = 0;
-                if($i+1 == $value["kunci"]){
-                    $tipe = 1;
-                }
-                $setValue_pilihan = "nama_jawaban='".$value['jawaban'][$i]."',pertanyaan_id='".$pertanyaan_id."',tipe='".$tipe."'";
-                $this->query->insert('pilihan',$setValue_pilihan);
-            }
-
-        }
+        $this->data = $data;
     }
 
 }

@@ -120,4 +120,17 @@ class Query extends Database
 
 		return $result[0][$field];
 	}
+
+	public function find($table,$return_field,$field,$value)
+	{
+		$query = "SELECT $return_field from $table where $field = '$value'";
+		$stmt = $this->db->prepare($query);
+		$stmt->execute();
+		$result = $stmt->fetchAll();
+
+		if(count($result) > 0){
+			return $result[0][$return_field];
+		}
+		return false;
+	}
 }

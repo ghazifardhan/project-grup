@@ -2,7 +2,6 @@
 /*
 	need install tidy first, because too many invalid html
 */
-require("simple_html_dom.php");
 
 function leechData($link) {
 
@@ -19,29 +18,49 @@ function leechData($link) {
 
 	$html = str_get_html($tidy);
 	$soal = array();
-	foreach($html->find('div[class^="soal_ujian page"]') as $e)
+	if(!empty($html))
 	{
-		$temp= array('pertanyaan'=>'', 'jawaban'=>array(), 'kunci'=>'');
-		foreach($e->find('div[class="pertanyaan"]') as $f)
+		foreach($html->find('div[class^="soal_ujian page"]') as $e)
 		{
-			$temp['pertanyaan'] = preg_replace('/\s+/', ' ',strip_tags($f->innertext));
-		}
-
-		foreach($e->find('table') as $f)
-		{
-			$a=0;
-			foreach($f->find('tr') as $g)
+			$temp= array('pertanyaan'=>'', 'jawaban'=>array(), 'kunci'=>'');
+			if(!empty($e->find('div[class="pertanyaan"]')))
 			{
-				if($a!=0) {
-					$temp['jawaban'][] = str_replace('&nbsp;','', trim($g->find('td',1)->innertext()));
-					if( $g->find('td',0)->find('div',0)->find('input',0)->getAttribute('value')==1) $temp['kunci']=$a;
-
+				foreach($e->find('div[class="pertanyaan"]') as $f)
+				{
+					$temp['pertanyaan'] = preg_replace('/\s+/', ' ',strip_tags($f->innertext));
 				}
-				$a++;
 			}
+			else{
+				return "kosong";
+			}
+
+			if(!empty($e->find('table')))
+			{
+				foreach($e->find('table') as $f)
+				{
+					$a=0;
+					foreach($f->find('tr') as $g)
+					{
+						if($a!=0) {
+							$temp['jawaban'][] = str_replace('&nbsp;','', trim($g->find('td',1)->innertext()));
+							$dt = !empty($g->find('td',0)->find('div',0)->find('input',0)->getAttribute('value'))? !empty($g->find('td',0)->find('div',0)->find('input',0)->getAttribute('value')) : -1;
+							// if( $g->find('td',0)->find('div',0)->find('input',0)->getAttribute('value')==1) $temp['kunci']=$a;
+							if( $dt==1) $temp['kunci']=$a;
+
+						}
+						$a++;
+					}
+				}
+			}
+			else{
+				return "kosong";
+			}
+			$soal[] = $temp;
 		}
-		$soal[] = $temp;
+		return $soal;
 	}
-	return $soal;
+	else{
+		return "kosong";
+	}
 }
 ?>
