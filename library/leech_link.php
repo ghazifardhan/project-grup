@@ -6,7 +6,8 @@
 function leechLink(){
 
 	$link = "http://tryoutunonline.com/index.php";
-	$html = str_get_html(file_get_contents($link));
+	// $html = str_get_html(file_get_contents($link));
+	$html = str_get_html($link);
 	$data = array();
 	foreach($html->find('div[class="collapse navbar-collapse main-nav"]') as $e)
 	{
